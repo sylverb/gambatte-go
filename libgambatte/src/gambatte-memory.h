@@ -24,7 +24,7 @@
 #include "bootloader.h"
 #include "sound.h"
 #include "tima.h"
-#include "video.h"
+#include "gambatte_video.h"
 
 namespace gambatte {
 

@@ -40,7 +40,11 @@ namespace gambatte
 
    static inline unsigned rombanks(MemPtrs const &memptrs)
    {
+#ifndef TARGET_GNW
       return (memptrs.romdataend()     - memptrs.romdata()    ) / 0x4000;
+#else
+      return (memptrs.romsize()) / 0x4000;
+#endif
    }
 
    class DefaultMbc : public Mbc {
@@ -259,10 +263,18 @@ namespace gambatte
                setRambank();
                break;
             case 1:
-               rombank = data & 0x7F;
+               // Test if Mbc30
+               if (memptrs.rombankcount() <= 0x80)
+                  rombank = data & 0x7F;
+               else
+                  rombank = data & 0xFF;
                setRombank();
                break;
             case 2:
+               // Should be data & 0x03 in MBC3 :
+               // if (memptrs.ram_size() <= 0x8000) {
+//                  rambank = data & 0x03;
+//               }
                rambank = data;
                setRambank();
                break;
@@ -449,12 +461,14 @@ namespace gambatte
                break;
             case 0x4:
             case 0x5:
+#ifndef TARGET_GNW
                if(hasRumble && ((P >> 12 & 0x7) == 4))
                {
                   cartridge_set_rumble((data >> 3) & 1);
                   rambank = (data & ~8) & 0x0f;
                }
                else
+#endif
                {
                   rambank = data & 0x0f;
                }
@@ -512,12 +526,14 @@ namespace gambatte
       mbc->loadState(state.mem);
    }
 
+#ifndef TARGET_GNW
    static void enforce8bit(unsigned char *data, unsigned long sz)
    {
       if (static_cast<unsigned char>(0x100))
          while (sz--)
             *data++ &= 0xFF;
    }
+#endif
 
    static unsigned pow2ceil(unsigned n)
    {
@@ -626,13 +642,15 @@ namespace gambatte
 
       ggUndoList_.clear();
       mbc.reset();
-      memptrs_.reset(rombanks, rambanks, cgb ? 8 : 2);
+      memptrs_.reset((unsigned char *)data, romsize, rombanks, rambanks, cgb ? 8 : 2);
       rtc_.set(false, 0);
       huc3_.set(false);
 
+#ifndef TARGET_GNW
       memcpy(memptrs_.romdata(), romdata, ((romsize / 0x4000) * 0x4000ul) * sizeof(unsigned char));
       std::memset(memptrs_.romdata() + (romsize / 0x4000) * 0x4000ul, 0xFF, (rombanks - romsize / 0x4000) * 0x4000ul);
       enforce8bit(memptrs_.romdata(), rombanks * 0x4000ul);
+#endif
 
       switch (type)
       {
@@ -676,6 +694,7 @@ namespace gambatte
             cmp = ((cmp >> 2 | cmp << 6) ^ 0x45) & 0xFF;
          }
 
+//TODO : FIX Sylver
          for (unsigned bank = 0; bank < static_cast<std::size_t>(memptrs_.romdataend() - memptrs_.romdata()) / 0x4000; ++bank)
          {
             if (mbc->isAddressWithinAreaRombankCanBeMappedTo(addr, bank)

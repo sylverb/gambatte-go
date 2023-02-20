@@ -43,21 +43,36 @@ namespace gambatte
       delete []memchunk_;
    }
 
-   void MemPtrs::reset(const unsigned rombanks, const unsigned rambanks, const unsigned wrambanks)
+   void MemPtrs::reset(unsigned char *data, unsigned int romsize, const unsigned rombanks, const unsigned rambanks, const unsigned wrambanks)
    {
       delete []memchunk_;
+#ifndef TARGET_GNW
       memchunk_     = new unsigned char[
          0x4000 
          + rombanks * 0x4000ul + 0x4000
          + rambanks * 0x2000ul 
          + wrambanks * 0x1000ul 
          + 0x4000];
+#else
+      memchunk_     = new unsigned char[
+         0x8000 
+         + rambanks * 0x2000ul 
+         + wrambanks * 0x1000ul 
+         + 0x4000];
 
-      romdata_[0]   = romdata();   
-      rambankdata_  = romdata_[0] + rombanks * 0x4000ul + 0x4000;
+         romcart_ = data;
+         romsize_ = romsize;
+#endif
+      romdata_[0]   = romdata();
+#ifndef TARGET_GNW
+      rambankdata_  = memchunk_ + 0x4000 + rombanks * 0x4000ul + 0x4000;
+#else
+      rambankdata_  = memchunk_ + 0x4000 + 0x4000;
+#endif
       wramdata_[0]  = rambankdata_ + rambanks * 0x2000ul;
       wramdataend_ = wramdata_[0] + wrambanks * 0x1000ul;
 
+      rombanks_ = rombanks;
       std::memset(rdisabledRamw(), 0xFF, 0x2000);
 
       oamDmaSrc_    = oam_dma_src_off;

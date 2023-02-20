@@ -20,7 +20,7 @@
 #include "inputgetter.h"
 #include "savestate.h"
 #include "sound.h"
-#include "video.h"
+#include "gambatte_video.h"
 #include "bootloader.h"
 #include <cstring>
 

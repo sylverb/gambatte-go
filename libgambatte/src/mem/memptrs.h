@@ -41,7 +41,7 @@ namespace gambatte
 
          MemPtrs();
          ~MemPtrs();
-         void reset(unsigned rombanks, unsigned rambanks, unsigned wrambanks);
+         void reset(unsigned char *data, unsigned int romsize, unsigned rombanks, unsigned rambanks, unsigned wrambanks);
 
          const unsigned char * rmem(unsigned area) const
          {
@@ -65,7 +65,11 @@ namespace gambatte
 
          unsigned char * romdata() const
          {
+#ifndef TARGET_GNW
             return memchunk_ + 0x4000;
+#else
+            return romcart_;
+#endif
          }
 
          unsigned char * romdata(unsigned area) const 
@@ -123,6 +127,18 @@ namespace gambatte
             return oamDmaSrc_;
          }
 
+         unsigned int rombankcount() const
+         {
+            return rombanks_;
+         }
+
+#ifdef TARGET_GNW
+         unsigned int romsize() const
+         {
+            return romsize_;
+         }
+#endif
+
          void setRombank0(unsigned bank);
          void setRombank(unsigned bank);
          void setRambank(unsigned ramFlags, unsigned rambank);
@@ -131,6 +147,11 @@ namespace gambatte
          void setOamDmaSrc(OamDmaSrc oamDmaSrc);
 
       private:
+#ifdef TARGET_GNW
+         unsigned char *romcart_;
+         unsigned int  romsize_;
+#endif
+         unsigned int  rombanks_;
          unsigned char *romdata_[2];
          unsigned char *wramdata_[2];
          const unsigned char *rmem_[0x10];
